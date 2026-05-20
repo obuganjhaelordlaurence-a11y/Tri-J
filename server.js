@@ -10,6 +10,15 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// --- DITO ANG IDINAGDAG KO PARA SA FRONTEND ---
+// Nagsisilbi itong gateway para mabasa ang index.html at assets mo
+app.use(express.static(path.join(__dirname))); 
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+// ----------------------------------------------
+
 // Siguraduhin na ang path ng DB ay absolute para hindi mag-error sa deployment
 const dbPath = path.resolve(__dirname, 'trij.db');
 const db = new sqlite3.Database(dbPath, (err) => {
