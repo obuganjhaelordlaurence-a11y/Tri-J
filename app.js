@@ -7,7 +7,7 @@
 'use strict';
 
 // ── API base URL — change this if your server runs on a different port
-const API = 'http://localhost:3000/api';
+const API = 'https://tri-j-1.onrender.com/api';
 
 /* ─────────────────────────────────────────────
    DATA (still used for UI rendering — coaches/sports come from backend too,
