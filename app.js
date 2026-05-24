@@ -1,7 +1,6 @@
 'use strict';
 /* =========================================================
-   Tri J Sports Training Academy — Standalone App
-   All data stored in localStorage (no backend required)
+   Tri J 
    ========================================================= */
 
 // ── DATA ──────────────────────────────────────────────────
@@ -78,6 +77,14 @@ const LS = {
   get:(k,d=[])=>{ try{return JSON.parse(localStorage.getItem(k))||d}catch{return d} },
   set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
 };
+// ── FETCH DATA FROM NEON ──────────────────────────────────
+async function loadAthletesFromDB() {
+  try {
+    const res = await fetch('/api/get-athletes');
+    athletes = await res.json();
+    renderAthletesTable();
+  } catch (e) { console.error("Could not fetch athletes:", e); }
+}
 
 // ── STATE ─────────────────────────────────────────────────
 let currentUser = LS.get('trij_user', null);
@@ -85,9 +92,12 @@ let currentBooking = null;
 let selectedPkg = null;
 let users = LS.get('trij_users', [{name:'Demo Athlete',email:'athlete@trij.com',password:'train123',country:'Philippines'}]);
 let receipts = LS.get('trij_receipts',[]);
-let athletes = LS.get('trij_athletes',[]);
-let schedules = LS.get('trij_schedules',[]);
-let assignments = LS.get('trij_assignments',[]);
+let athletes = []; // Now fetching from Neon
+let schedules = []; // We will fetch this from Neon
+let assignments = []; // We will fetch this from Neon
+
+// Initial database load
+loadAthletesFromDB();
 
 // ── NAVIGATION ────────────────────────────────────────────
 function navigateTo(section) {
@@ -342,22 +352,35 @@ function switchAdminTab(tab, btn){
   if(tab==='reports') renderReports();
 }
 
-function addAthlete(){
-  const name=document.getElementById('ath-name').value.trim();
-  const sport=document.getElementById('ath-sport').value;
-  const email=document.getElementById('ath-email').value.trim();
-  const country=document.getElementById('ath-country').value.trim();
-  const err=document.getElementById('ath-error');
-  if(!name||!sport||!email){ err.textContent='Please fill all fields.'; return; }
-  if(athletes.find(a=>a.email===email)){ err.textContent='Email already exists.'; return; }
-  err.textContent='';
-  athletes.push({id:Date.now(),name,sport,email,country});
-  LS.set('trij_athletes',athletes);
-  renderAthletesTable();
-  ['ath-name','ath-email','ath-country'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('ath-sport').value='';
-  showToast(`✅ ${name} added successfully`);
-  populateAssignDropdowns();
+async function addAthlete() {
+  const name = document.getElementById('ath-name').value.trim();
+  const sport = document.getElementById('ath-sport').value;
+  const email = document.getElementById('ath-email').value.trim();
+  const country = document.getElementById('ath-country').value.trim();
+  const err = document.getElementById('ath-error');
+  
+  if (!name || !sport || !email) { err.textContent = 'Please fill all fields.'; return; }
+
+  try {
+    // This sends data to your new API route
+    const response = await fetch('/api/add-athlete', {
+      method: 'POST',
+      body: JSON.stringify({ name, sport, email, country })
+    });
+
+    if (response.ok) {
+      showToast(`✅ ${name} saved to Neon Database!`);
+      // Clear inputs
+      ['ath-name', 'ath-email', 'ath-country'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('ath-sport').value = '';
+      // Refresh local list
+      renderAthletesTable();
+    } else {
+      err.textContent = 'Database error: Could not save.';
+    }
+  } catch (e) {
+    err.textContent = 'Connection error: ' + e.message;
+  }
 }
 
 function renderAthletesTable(){
